@@ -1,0 +1,4 @@
+[submodule "upstream/AFFiNE"]
+	path = upstream/AFFiNE
+	url = https://github.com/toeverything/AFFiNE.git
+	branch = canary
