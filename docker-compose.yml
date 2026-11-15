@@ -1,0 +1,67 @@
+name: betternotion
+
+services:
+  affine:
+    image: ghcr.io/toeverything/affine:${AFFINE_IMAGE_TAG:-stable}
+    container_name: betternotion_app
+    ports:
+      - "127.0.0.1:${AFFINE_PORT:-3010}:3010"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      affine_migration:
+        condition: service_completed_successfully
+    volumes:
+      - ./data/storage:/root/.affine/storage
+      - ./config:/root/.affine/config
+    environment:
+      REDIS_SERVER_HOST: redis
+      DATABASE_URL: "postgresql://affine:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/affine"
+      AFFINE_INDEXER_ENABLED: "false"
+    restart: unless-stopped
+
+  affine_migration:
+    image: ghcr.io/toeverything/affine:${AFFINE_IMAGE_TAG:-stable}
+    container_name: betternotion_migration
+    command: ["sh", "-c", "node ./scripts/self-host-predeploy.js"]
+    volumes:
+      - ./data/storage:/root/.affine/storage
+      - ./config:/root/.affine/config
+    environment:
+      REDIS_SERVER_HOST: redis
+      DATABASE_URL: "postgresql://affine:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/affine"
+      AFFINE_INDEXER_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: betternotion_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: betternotion_postgres
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: affine
+      POSTGRES_DB: affine
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD in .env}"
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U affine -d affine"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped

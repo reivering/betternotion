@@ -1,0 +1,21 @@
+{
+  "$schema": "https://github.com/toeverything/AFFiNE/releases/latest/download/config.schema.json",
+  "deployment": {
+    "type": "selfhosted"
+  },
+  "server": {
+    "name": "BetterNotion (AFFiNE)",
+    "externalUrl": "http://localhost:3010"
+  },
+  "copilot": {
+    "enabled": false,
+    "byok": {
+      "enabled": true,
+      "allowCustomEndpoint": true
+    }
+  },
+  "indexer": {
+    "enabled": true,
+    "provider.type": "embedded"
+  }
+}
